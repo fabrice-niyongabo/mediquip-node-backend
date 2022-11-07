@@ -1,0 +1,218 @@
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const router = express.Router();
+
+const auth = require("../middleware/auth");
+
+const Users = require("../model/users");
+
+router.post("/login", async (req, res) => {
+  try {
+    // Get user input
+    const { email, password } = req.body;
+
+    // Validate user input
+    if (!(email && password)) {
+      return res
+        .status(400)
+        .send({ msg: "Please provide your email and password" });
+    }
+    // Validate if user exist in our database
+    const user = await Users.findOne({ email });
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      // Create token
+      const token = jwt.sign(
+        {
+          user_id: user._id,
+          email,
+          role: user.role,
+          phone: user.phone,
+          createdAt: user.createdAt,
+          companyName: user.companyName,
+          fullName: user.fullName,
+        },
+        process.env.TOKEN_KEY,
+        {
+          expiresIn: "2h",
+        }
+      );
+
+      // save user token
+      user.token = token;
+
+      // user
+      return res.status(200).json({
+        email: user.email,
+        fullName: user.fullName,
+        companyName: user.companyName,
+        role: user.role,
+        id: user._id,
+        token: user.token,
+      });
+    } else {
+      return res.status(400).send({ msg: "Wrong username or password" });
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send({
+      msg: "Something went wrong while signing into your account. Try again later",
+    });
+  }
+});
+
+router.post("/updatePassword/", auth, async (req, res) => {
+  const { newPwd, currentPwd } = req.body;
+  try {
+    const user = await Users.findOne({ _id: req.user.user_id });
+    if (user && (await bcrypt.compare(currentPwd, user.password))) {
+      encryptedPassword = await bcrypt.hash(newPwd, 10);
+      Users.updateOne(
+        { _id: req.user.user_id },
+        { password: encryptedPassword },
+        (err, result) => {
+          if (err) {
+            return res.status(400).send({ msg: err.message });
+          } else {
+            return res.status(200).send({ result, msg: "Password updated!" });
+          }
+        }
+      );
+    } else {
+      return res.status(400).send({ msg: "Wrong old password" });
+    }
+  } catch (err) {
+    return res.status(400).send({
+      msg: "Something went wrong. Try again later",
+    });
+  }
+});
+
+router.post("/updateUserInfo/", auth, async (req, res) => {
+  const { fullName } = req.body;
+  try {
+    const user = await Users.updateOne({ _id: req.user.user_id }, { fullName });
+    if (user) {
+      return res.status(201).send({ msg: "User updated!" });
+    } else {
+      return res.status(400).send({
+        msg: "Something went wrong, please try again later after some time.",
+      });
+    }
+  } catch (err) {
+    return res.status(400).send({
+      msg: "Something went wrong. Try again later. " + err.message,
+    });
+  }
+});
+
+router.post("/register", async (req, res) => {
+  try {
+    // Get user input
+    const {
+      fullName,
+      email,
+      password,
+      phone,
+      createFacility,
+      facilityName,
+      facilityType,
+      averagePrice,
+      description,
+    } = req.body;
+
+    // Validate user input
+    if (!(email && password && fullName && phone)) {
+      res.status(400).send({
+        status: "Error",
+        msg: "Provide correct info",
+      });
+    }
+
+    // check if user already exist
+    // Validate if user exist in our database
+    const oldUser = await Users.findOne({ email, phone });
+
+    if (oldUser) {
+      return res
+        .status(409)
+        .send({ msg: "Email and phone number already exists." });
+    }
+
+    //Encrypt user password
+    encryptedPassword = await bcrypt.hash(password, 10);
+
+    // Create user in our database
+    const user = await Users.create({
+      fullName,
+      phone,
+      email: email.toLowerCase(), // sanitize: convert email to lowercase
+      password: encryptedPassword,
+    });
+
+    // Create token
+    const token = jwt.sign(
+      {
+        user_id: user._id,
+        email,
+        fullName,
+        role: user.role,
+        phone: user.phone,
+        companyName: user.companyName,
+        createdAt: user.createdAt,
+      },
+      process.env.TOKEN_KEY,
+      {
+        expiresIn: "2h",
+      }
+    );
+    // save user token
+    user.token = token;
+
+    if (createFacility) {
+      const facility = await Facility.create({
+        managerId: user._id,
+        name: facilityName,
+        type: facilityType,
+        description: description,
+        address: "",
+        stars: "",
+        averagePrice,
+        lat: "",
+        long: "",
+        image: "",
+        status: "inactive",
+      });
+      res.status(201).json({
+        status: "success",
+        msg: "Registered and applied for facility activation sucessfull!",
+        phone,
+        email,
+        fullName,
+        companyName: user.companyName,
+        role: user.role,
+        token: user.token,
+      });
+    } else {
+      // return new user
+      res.status(201).json({
+        status: "success",
+        msg: "User created successfull!",
+        phone,
+        email,
+        fullName,
+        companyName: user.companyName,
+        role: user.role,
+        token: user.token,
+      });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(400).send({
+      msg: err.message,
+    });
+  }
+});
+
+module.exports = router;
