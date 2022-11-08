@@ -79,6 +79,7 @@ router.post("/add", auth, async (req, res) => {
       });
     }
   } catch (err) {
+    console.log(JSON.stringify(err));
     res.status(400).send({
       msg: err.message,
     });
