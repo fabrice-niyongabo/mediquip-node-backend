@@ -18,7 +18,8 @@ const usersRoute = require("./routes/users");
 const devicesRoute = require("./routes/devices");
 const troubleShootingCategoriesRoute = require("./routes/troubleShootingCategories");
 app.use("/api/users/", usersRoute);
-app.use("/api/troubleshootingCategories/", devicesRoute);
+app.use("/api/devices/", devicesRoute);
+app.use("/api/troubleshootingCategories/", troubleShootingCategoriesRoute);
 
 //404 route
 app.use("*", (req, res) => {
