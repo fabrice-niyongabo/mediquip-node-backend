@@ -8,19 +8,49 @@ const auth = require("../middleware/auth");
 const TroubleShootingSteps = require("../model/troubleshootingSteps");
 const StepItems = require("../model/stepItems");
 
-// router.get("/", auth, async (req, res) => {
-//   try {
-//     const troubleShootingCategories = await TroubleShootingCategories.find({});
-//     return res.status(201).json({
-//       status: "success",
-//       troubleShootingCategories,
-//     });
-//   } catch (err) {
-//     res.status(400).send({
-//       msg: err.message,
-//     });
-//   }
-// });
+router.get("/", auth, async (req, res) => {
+  try {
+    const troubleShootingSteps = await TroubleShootingSteps.find({});
+    return res.status(201).json({
+      status: "success",
+      troubleShootingSteps,
+    });
+  } catch (err) {
+    res.status(400).send({
+      msg: err.message,
+    });
+  }
+});
+
+router.get("/:issueId", auth, async (req, res) => {
+  try {
+    const issueId = req.params["issueId"];
+    const troubleShootingSteps = await TroubleShootingSteps.find({ issueId });
+    return res.status(201).json({
+      status: "success",
+      troubleShootingSteps,
+    });
+  } catch (err) {
+    res.status(400).send({
+      msg: err.message,
+    });
+  }
+});
+
+router.get("/stepItems/:stepId", auth, async (req, res) => {
+  try {
+    const stepId = req.params["stepId"];
+    const stepItems = await StepItems.find({ stepId });
+    return res.status(200).json({
+      status: "success",
+      stepItems,
+    });
+  } catch (err) {
+    res.status(400).send({
+      msg: err.message,
+    });
+  }
+});
 
 router.post("/", auth, async (req, res) => {
   try {
@@ -70,6 +100,43 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
+router.put("/", auth, async (req, res) => {
+  try {
+    const { title, stepId } = req.body;
+    // Validate user input
+    if (!title || !stepId) {
+      return res.status(400).send({
+        status: "Error",
+        msg: "Provide correct info",
+      });
+    }
+
+    const step = await TroubleShootingSteps.updateOne(
+      {
+        _id: stepId,
+      },
+      { title }
+    );
+    if (step) {
+      return res.status(201).json({
+        status: "success",
+        msg: "Step title updated successfull!",
+        step,
+      });
+    } else {
+      return res.status(400).json({
+        status: "Error",
+        msg: "Something went wrong, try again later",
+      });
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send({
+      msg: err.message,
+    });
+  }
+});
+
 router.post("/stepItems/", auth, async (req, res) => {
   try {
     const { type, value, stepId } = req.body;
@@ -99,6 +166,31 @@ router.post("/stepItems/", auth, async (req, res) => {
     }
   } catch (err) {
     console.log(err);
+    res.status(400).send({
+      msg: err.message,
+    });
+  }
+});
+
+router.delete("/stepItems/:id", auth, async (req, res) => {
+  try {
+    const id = req.params["id"];
+    const newCategory = await StepItems.deleteOne({
+      _id: id,
+    });
+
+    if (newCategory) {
+      return res.status(201).json({
+        status: "success",
+        msg: "Step Item deleted successfull!",
+      });
+    } else {
+      return res.status(400).json({
+        status: "Error",
+        msg: "Something went wrong, try again later",
+      });
+    }
+  } catch (err) {
     res.status(400).send({
       msg: err.message,
     });
