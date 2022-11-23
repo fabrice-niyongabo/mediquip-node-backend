@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const deviceSchema = new mongoose.Schema({
+const transactionsSchema = new mongoose.Schema({
   name: { type: String },
   statusDescription: { type: String },
   spTransactionId: { type: String },
@@ -14,4 +14,4 @@ const deviceSchema = new mongoose.Schema({
   createdAt: { type: String, default: new Date() },
 });
 
-module.exports = mongoose.model("devices", deviceSchema);
+module.exports = mongoose.model("transactions", transactionsSchema);
