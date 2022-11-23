@@ -19,11 +19,13 @@ const devicesRoute = require("./routes/devices");
 const troubleShootingCategoriesRoute = require("./routes/troubleShootingCategories");
 const deviceIssuesRoute = require("./routes/deviceIssues");
 const troubleshootingStepsRoute = require("./routes/troubleshootingSteps");
+const transactionsRoute = require("./routes/transactions");
 app.use("/api/users/", usersRoute);
 app.use("/api/devices/", devicesRoute);
 app.use("/api/troubleshootingCategories/", troubleShootingCategoriesRoute);
 app.use("/api/deviceissues/", deviceIssuesRoute);
 app.use("/api/troubleshootingSteps/", troubleshootingStepsRoute);
+app.use("/api/transactions/", transactionsRoute);
 
 //404 route
 app.use("*", (req, res) => {
