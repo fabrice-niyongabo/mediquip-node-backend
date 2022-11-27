@@ -6,6 +6,71 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 
 const Users = require("../model/users");
+const { randomNumber } = require("../helpers");
+
+router.get("/", auth, async (req, res) => {
+  try {
+    const users = await Users.find({ role: "user" });
+    return res.status(200).send({ msg: "Fetched users successfully!", users });
+  } catch (err) {
+    return res.status(400).send({
+      msg: "Something went wrong while signing into your account. Try again later",
+    });
+  }
+});
+
+router.post("/", auth, async (req, res) => {
+  try {
+    const { email, companyName } = req.body;
+
+    if (!(email && companyName)) {
+      return res.status(400).send({
+        status: "Error",
+        msg: "Provide correct info",
+      });
+    }
+    const oldUser = await Users.findOne({ email });
+    if (oldUser) {
+      return res.status(409).send({ msg: "User's Email already exists." });
+    }
+    const user = await Users.create({
+      email: email.toLowerCase(),
+      otp: randomNumber(),
+      companyName,
+    });
+    return res.status(200).send({ msg: "User created successfull", user });
+  } catch (err) {
+    return res.status(400).send({
+      msg: "Something went wrong while signing into your account. Try again later",
+    });
+  }
+});
+
+router.post("/otp/", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!(email && otp)) {
+      return res.status(400).send({
+        status: "Error",
+        msg: "Provide correct info",
+      });
+    }
+    const oldUser = await Users.findOne({ email, otp, otpUsed: false });
+    if (oldUser) {
+      return res
+        .status(200)
+        .send({ msg: "OTP Validated for " + oldUser.email });
+    }
+    return res
+      .status(400)
+      .send({ msg: "Invalid OTP, Please contact admin for more info." });
+  } catch (err) {
+    return res.status(400).send({
+      msg: "Something went wrong while signing into your account. Try again later",
+    });
+  }
+});
 
 router.post("/login", async (req, res) => {
   try {
@@ -110,106 +175,64 @@ router.post("/updateUserInfo/", auth, async (req, res) => {
 router.post("/register", async (req, res) => {
   try {
     // Get user input
-    const {
-      fullName,
-      email,
-      password,
-      phone,
-      createFacility,
-      facilityName,
-      facilityType,
-      averagePrice,
-      description,
-    } = req.body;
+    const { fullName, email, password, otp } = req.body;
 
     // Validate user input
-    if (!(email && password && fullName && phone)) {
-      res.status(400).send({
+    if (!(email && password && fullName, otp)) {
+      return res.status(400).send({
         status: "Error",
         msg: "Provide correct info",
       });
     }
 
-    // check if user already exist
-    // Validate if user exist in our database
-    const oldUser = await Users.findOne({ email, phone });
+    const oldUser = await Users.findOne({ email, otp, otpUsed: false });
 
     if (oldUser) {
-      return res
-        .status(409)
-        .send({ msg: "Email and phone number already exists." });
-    }
+      //Encrypt user password
+      encryptedPassword = await bcrypt.hash(password, 10);
 
-    //Encrypt user password
-    encryptedPassword = await bcrypt.hash(password, 10);
+      // Create user in our database
+      const user = await Users.updateOne(
+        { _id: oldUser._id },
+        {
+          fullName,
+          password: encryptedPassword,
+          otpUsed: true,
+        }
+      );
+      // Create token
+      const token = jwt.sign(
+        {
+          user_id: oldUser._id,
+          email: oldUser.email,
+          fullName,
+          role: oldUser.role,
+          companyName: oldUser.companyName,
+          createdAt: oldUser.createdAt,
+        },
+        process.env.TOKEN_KEY,
+        {
+          // expiresIn: "2h",
+        }
+      );
 
-    // Create user in our database
-    const user = await Users.create({
-      fullName,
-      phone,
-      email: email.toLowerCase(), // sanitize: convert email to lowercase
-      password: encryptedPassword,
-    });
-
-    // Create token
-    const token = jwt.sign(
-      {
-        user_id: user._id,
-        email,
-        fullName,
-        role: user.role,
-        phone: user.phone,
-        companyName: user.companyName,
-        createdAt: user.createdAt,
-      },
-      process.env.TOKEN_KEY,
-      {
-        expiresIn: "2h",
-      }
-    );
-    // save user token
-    user.token = token;
-
-    if (createFacility) {
-      const facility = await Facility.create({
-        managerId: user._id,
-        name: facilityName,
-        type: facilityType,
-        description: description,
-        address: "",
-        stars: "",
-        averagePrice,
-        lat: "",
-        long: "",
-        image: "",
-        status: "inactive",
-      });
-      res.status(201).json({
-        status: "success",
-        msg: "Registered and applied for facility activation sucessfull!",
-        phone,
-        email,
-        fullName,
-        companyName: user.companyName,
-        role: user.role,
-        token: user.token,
-      });
-    } else {
       // return new user
-      res.status(201).json({
+      return res.status(201).json({
         status: "success",
-        msg: "User created successfull!",
-        phone,
-        email,
+        msg: "User Account Activate successfull!",
+        email: oldUser.email,
         fullName,
-        companyName: user.companyName,
-        role: user.role,
-        token: user.token,
+        companyName: oldUser.companyName,
+        role: oldUser.role,
+        token: token,
+        id: oldUser._id,
       });
     }
+
+    return res.status(400).send({ msg: "Invalid user details." });
   } catch (err) {
     console.log(err);
-    res.status(400).send({
+    return res.status(400).send({
       msg: err.message,
     });
   }
