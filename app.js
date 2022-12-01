@@ -30,6 +30,7 @@ app.use("/api/deviceissues/", deviceIssuesRoute);
 app.use("/api/troubleshootingSteps/", troubleshootingStepsRoute);
 app.use("/api/transactions/", transactionsRoute);
 app.use("/api/v2/transactions/", transactionsRoute2);
+app.use("/api/search/", searchRoute);
 app.use("/api/tickets/", ticketsRoute);
 
 //404 route
