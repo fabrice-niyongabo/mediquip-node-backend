@@ -19,6 +19,17 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+router.get("/chatt/", auth, async (req, res) => {
+  try {
+    const users = await Users.find({ role: "user", otpUsed: true });
+    return res.status(200).send({ msg: "Fetched users successfully!", users });
+  } catch (err) {
+    return res.status(400).send({
+      msg: "Something went wrong while signing into your account. Try again later",
+    });
+  }
+});
+
 router.post("/", auth, async (req, res) => {
   try {
     const { email, companyName } = req.body;

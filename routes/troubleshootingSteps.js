@@ -197,4 +197,41 @@ router.delete("/stepItems/:id", auth, async (req, res) => {
   }
 });
 
+router.put("/stepItems/", auth, async (req, res) => {
+  try {
+    const { value, stepId } = req.body;
+    // Validate user input
+    if (!value || !stepId) {
+      return res.status(400).send({
+        status: "Error",
+        msg: "Provide correct info",
+      });
+    }
+
+    const step = await StepItems.updateOne(
+      {
+        _id: stepId,
+      },
+      { value }
+    );
+    if (step) {
+      return res.status(201).json({
+        status: "success",
+        msg: "Step item updated successfull!",
+        step,
+      });
+    } else {
+      return res.status(400).json({
+        status: "Error",
+        msg: "Something went wrong, try again later",
+      });
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send({
+      msg: err.message,
+    });
+  }
+});
+
 module.exports = router;
