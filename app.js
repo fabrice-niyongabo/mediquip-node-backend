@@ -24,6 +24,7 @@ const transactionsRoute2 = require("./routes/transactions2");
 const searchRoute = require("./routes/search");
 const ticketsRoute = require("./routes/tickets");
 const messagesRoute = require("./routes/messages");
+const sparepartsRoute = require("./routes/spareparts");
 app.use("/api/users/", usersRoute);
 app.use("/api/devices/", devicesRoute);
 app.use("/api/troubleshootingCategories/", troubleShootingCategoriesRoute);
@@ -34,6 +35,7 @@ app.use("/api/v2/transactions/", transactionsRoute2);
 app.use("/api/search/", searchRoute);
 app.use("/api/tickets/", ticketsRoute);
 app.use("/api/messages/", messagesRoute);
+app.use("/api/spareparts/", sparepartsRoute);
 
 //404 route
 app.use("*", (req, res) => {
