@@ -10,6 +10,7 @@ const SolvedProblems = require("../model/solvedProblems");
 const Users = require("../model/users");
 const Issues = require("../model/deviceIssues");
 const Devices = require("../model/devices");
+const SpareParts = require("../model/spareParts");
 
 router.get("/", auth, async (req, res) => {
   try {
@@ -71,19 +72,32 @@ router.post("/solved/", auth, async (req, res) => {
   try {
     const {
       estimatedTime,
-      estimatedPrice,
       serialNumber,
       deviceModal,
       deviceId,
       issueId,
+      sparePartsUsedList,
     } = req.body;
     // Validate user input
-    if (!serialNumber || !deviceModal || !deviceId || !estimatedPrice) {
+    let estimatedPrice = 0;
+    if (!serialNumber || !deviceModal || !deviceId) {
       return res.status(400).send({
         status: "Error",
         msg: "Provide correct info",
       });
     }
+
+    if (sparePartsUsedList.length) {
+      for (let i = 0; i < sparePartsUsedList.length; i++) {
+        const sp = await SpareParts.findOne({ _id: sparePartsUsedList[i]._id });
+        if (sp) {
+          estimatedPrice += sp.price;
+        }
+      }
+    }
+
+    estimatedPrice = estimatedPrice + Number(estimatedTime) * 5000;
+
     const ticket = await SolvedProblems.create({
       clientDeviceModel: deviceModal,
       estimatedTime,
