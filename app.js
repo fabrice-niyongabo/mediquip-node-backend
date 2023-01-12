@@ -25,17 +25,19 @@ const searchRoute = require("./routes/search");
 const ticketsRoute = require("./routes/tickets");
 const messagesRoute = require("./routes/messages");
 const sparepartsRoute = require("./routes/spareparts");
+const serialNumbersRoute = require("./routes/serialNumbers");
 app.use("/api/users/", usersRoute);
 app.use("/api/devices/", devicesRoute);
 app.use("/api/troubleshootingCategories/", troubleShootingCategoriesRoute);
 app.use("/api/deviceissues/", deviceIssuesRoute);
 app.use("/api/troubleshootingSteps/", troubleshootingStepsRoute);
-// app.use("/api/transactions/", transactionsRoute);
+app.use("/api/transactions/", transactionsRoute);
 app.use("/api/v2/transactions/", transactionsRoute2);
 app.use("/api/search/", searchRoute);
 app.use("/api/tickets/", ticketsRoute);
 app.use("/api/messages/", messagesRoute);
 app.use("/api/spareparts/", sparepartsRoute);
+app.use("/api/serialnumbers/", serialNumbersRoute);
 
 //404 route
 app.use("*", (req, res) => {
