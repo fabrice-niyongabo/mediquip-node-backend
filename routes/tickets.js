@@ -150,4 +150,28 @@ router.get("/solved/", auth, async (req, res) => {
   }
 });
 
+router.get("/solved/:id", auth, async (req, res) => {
+  const id = req.params["id"];
+  try {
+    const solved = [];
+    const tic = await SolvedProblems.find({ userId: id });
+    for (let i = 0; i < tic.length; i++) {
+      const user = await Users.findOne({ _id: tic[i].userId });
+      const issue = await Issues.findOne({ _id: tic[i].issueId });
+      const device = await Devices.findOne({ _id: tic[i].deviceId });
+      solved.push({ ...tic[i]._doc, user, issue, device });
+    }
+    return res.status(200).json({
+      status: "success",
+      msg: "Thank you for using this app.",
+      solved,
+    });
+  } catch (err) {
+    console.log(JSON.stringify(err));
+    res.status(400).send({
+      msg: err.message,
+    });
+  }
+});
+
 module.exports = router;
